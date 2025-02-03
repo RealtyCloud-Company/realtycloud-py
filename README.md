@@ -262,7 +262,7 @@ realtycloud = Realtycloud(token)
 ```python
 >>> realty_object = RealtyObject(key="77:04:0002010:1100", address="Москва, Рязанский пр-кт, д 74")
 >>> owners = [RealtyOwner(last_name="Иванов", first_name="Иван", middle_name="Иванович", birthday="12.12.2000")]
->>> realtycloud.order_fulls(realty_object, owners)
+>>> realtycloud.order_risk_assessment_for_individual(realty_object, owners)
 {
     "data": {
         "id": "96d8909d-49d8-41ca-a4c5-25ca7d2fe0ae",

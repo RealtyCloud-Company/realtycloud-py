@@ -194,15 +194,6 @@ class EGRNClient(ClientBase):
         response = self._post("", {"order_items": order_items})
         return response.get("data")
 
-    def fetch_risk_assessment_for_individual(self, requests: List[RealtyObject]) -> Optional[Dict]:
-        """Получить полные данные для нескольких объектов и их прав с использованием списка (key, address)."""
-        order_items = []
-        for request in requests:
-            order_items.append(request.to_dict(self.PRODUCT_NAMES["object"]))
-            order_items.append(request.to_dict(self.PRODUCT_NAMES["right_list"]))
-        response = self._post("", {"order_items": order_items})
-        return response.get("data")
-
 
 class RiskClient(ClientBase):
     """Клиент API риска Realtycloud."""
@@ -212,7 +203,7 @@ class RiskClient(ClientBase):
     def __init__(self, token: str):
         super().__init__(base_url=self.BASE_URL, token=token)
 
-    def fetch_fiz(
+    def fetch_risk_assessment_for_individual(
         self, object: RealtyObject, owners: List[RealtyOwner] = None
     ) -> Optional[Dict]:
         """Получить оценку риска для физического лица."""
@@ -261,6 +252,10 @@ class Realtycloud:
         self._risk_client = RiskClient(token=token)
         self._status_client = StatusClient(token=token)
 
+    def suggest(self, query: str, **kwargs) -> List[Dict]:
+        """Запрос на получение списка кадастровых номеров по адресу"""
+        return self._suggest_client.suggest(query=query, **kwargs)
+
     def order_single_object(self, request: RealtyObject, **kwargs) -> Optional[Dict]:
         """Запрос на отчет о характеристиках объекта недвижимости"""
         return self._egrn_client.fetch_single_object(request, **kwargs)
@@ -293,31 +288,33 @@ class Realtycloud:
         """Запрос на оптовые отчеты о характеристиках и переходе прав объектов недвижимости"""
         return self._egrn_client.fetch_multiple_full_data(requests, **kwargs)
 
-    def retrieve_risk_assessment_for_individual(
+    def order_risk_assessment_for_individual(
         self, object: RealtyObject, owners: List[RealtyOwner] = None, **kwargs
     ) -> Optional[Dict]:
         """Запрос оценки рисков собственников, связанных с объектом недвижимости"""
-        return self._risk_client.fetch_risk_assessment_for_individual(object, owners=owners, **kwargs)
+        return self._risk_client.fetch_risk_assessment_for_individual(
+            object, owners=owners, **kwargs
+        )
 
     def check_status(
         self, order_item_ids: List[str], offset: int = 0, limit: int = 1000, **kwargs
     ):
         """
-            После создания заказа вы получите уникальный идентификатор order_item_id для каждого продукта. Чтобы узнать текущий статус заказа, отправьте ваш order_item_id в массиве id. 
+        После создания заказа вы получите уникальный идентификатор order_item_id для каждого продукта. Чтобы узнать текущий статус заказа, отправьте ваш order_item_id в массиве id.
 
-            Если заказ выполнен, статус будет done, и появится ссылка для скачивания. Пожалуйста, соблюдайте интервал между запросами: опрашивать статус чаще, чем раз в 3 минуты, не имеет смысла. Если вам требуется более быстрая обработка, свяжитесь с нами, и мы предоставим вебхук для автоматического обновления статусов.
+        Если заказ выполнен, статус будет done, и появится ссылка для скачивания. Пожалуйста, соблюдайте интервал между запросами: опрашивать статус чаще, чем раз в 3 минуты, не имеет смысла. Если вам требуется более быстрая обработка, свяжитесь с нами, и мы предоставим вебхук для автоматического обновления статусов.
 
-            ### Виды статусов заказа:
-            - done — заказ готов.
-            - refund — возврат средств произведен.
-            - deleted — заказ удален.
-            - waitingforpayment — заказ ожидает оплаты.
-            - actionrequired — если заказ находится в этом статусе более 3 рабочих дней, возможно оформление возврата.
-            - inprogress — заказ в работе, ожидайте его завершения.
+        ### Виды статусов заказа:
+        - done — заказ готов.
+        - refund — возврат средств произведен.
+        - deleted — заказ удален.
+        - waitingforpayment — заказ ожидает оплаты.
+        - actionrequired — если заказ находится в этом статусе более 3 рабочих дней, возможно оформление возврата.
+        - inprogress — заказ в работе, ожидайте его завершения.
 
-            В зависимости от продукта, поле data в ответе будет содержать различные данные. Например, для большинства продуктов доступны следующие поля:
-            - file_pdf_url — ссылка на отчет в формате PDF.
-            - file_signed_zip_url — ссылка на zip-архив с подписью.
+        В зависимости от продукта, поле data в ответе будет содержать различные данные. Например, для большинства продуктов доступны следующие поля:
+        - file_pdf_url — ссылка на отчет в формате PDF.
+        - file_signed_zip_url — ссылка на zip-архив с подписью.
         """
         return self._status.fetch_status(
             order_item_ids=order_item_ids, offset=offset, limit=limit, **kwargs
