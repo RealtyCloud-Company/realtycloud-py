@@ -63,10 +63,10 @@ def validate_owner(owner) -> None:
         if len(owner.region) == 1:
             owner.region = owner.region.zfill(2)
 
-    if len(owner.inn) != settings.INN_LENGTH or not owner.inn.isdigit():
+    if owner.inn != "" and (len(owner.inn) != settings.INN_LENGTH or not owner.inn.isdigit()):
         raise ValueError("ИНН должен быть строкой из точно 12 цифр.")
 
-    if len(owner.registration_number) > settings.REGISTRATION_NUMBER_MAX_LENGTH:
+    if owner.registration_number and len(owner.registration_number) > settings.REGISTRATION_NUMBER_MAX_LENGTH:
         raise ValueError(
             f"Регистрационный номер не может превышать {settings.REGISTRATION_NUMBER_MAX_LENGTH} символов."
         )
