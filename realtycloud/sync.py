@@ -280,7 +280,7 @@ class Realtycloud:
 
     def order_single_full_data(self, request: RealtyObject, **kwargs) -> Optional[Dict]:
         """Запрос на отчет о характеристиках и переходе прав объектов недвижимости"""
-        return self._egrn_client.fetch_single_full_data(request, **kwargs)
+        return self._egrn_client.fetch_multiple_full_data(request, **kwargs)
 
     def order_multiple_full_data(
         self, requests: List[RealtyObject], **kwargs
@@ -316,6 +316,6 @@ class Realtycloud:
         - file_pdf_url — ссылка на отчет в формате PDF.
         - file_signed_zip_url — ссылка на zip-архив с подписью.
         """
-        return self._status_client.fetch_status(
+        return self._status.fetch_status(
             order_item_ids=order_item_ids, offset=offset, limit=limit, **kwargs
         )

@@ -6,7 +6,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="realtycloud",
-    version="0.0.1",
+    version="0.0.2",
     author="Realtycloud",
     author_email="help@realtycloud.ru",
     description="Thin Python wrapper over Realtycloud API",

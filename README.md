@@ -261,7 +261,10 @@ realtycloud = Realtycloud(token)
 
 ```python
 >>> realty_object = RealtyObject(key="77:04:0002010:1100", address="Москва, Рязанский пр-кт, д 74")
->>> owners = [RealtyOwner(last_name="Иванов", first_name="Иван", middle_name="Иванович", birthday="12.12.2000")]
+>>> owners = [
+    RealtyOwner(owner_type=0, last_name="Иванов", first_name="Иван", middle_name="Иванович", birthday="12.12.2000"),
+    RealtyOwner(owner_type=1, company_name="ООО Наименование компании", inn="1234567891", region="16"), 
+]
 >>> realtycloud.order_risk_assessment_for_individual(realty_object, owners)
 {
     "data": {
