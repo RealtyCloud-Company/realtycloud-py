@@ -140,7 +140,9 @@ class EGRNClient(ClientBase):
     BASE_URL = "https://api.realtycloud.ru/order"
     PRODUCT_NAMES = {
         "object": "EgrnObject",
+        "object_priority": "EgrnObjectFast",
         "right_list": "EgrnRightList",
+        "right_list_priority": "EgrnRightListFast",
     }
 
     def __init__(self, token: str):
@@ -167,29 +169,35 @@ class EGRNClient(ClientBase):
         response = self._post("", data)
         return response.get("data")
 
-    def fetch_single_object(self, request: RealtyObject) -> Optional[Dict]:
+    def fetch_single_object(self, request: RealtyObject, **kwargs) -> Optional[Dict]:
         """Получить объект с заданным запросом."""
-        return self._post_request(self.PRODUCT_NAMES["object"], [request])
+        product_name = self.PRODUCT_NAMES["object_priority"] if kwargs.get('priority', False) else self.PRODUCT_NAMES["object"]
+        return self._post_request(product_name, [request])
 
-    def fetch_multiple_objects(self, requests: List[RealtyObject]) -> Optional[Dict]:
+    def fetch_multiple_objects(self, requests: List[RealtyObject], **kwargs) -> Optional[Dict]:
         """Получить несколько объектов, позволяя использовать необязательные адреса."""
-        return self._post_request(self.PRODUCT_NAMES["object"], requests)
+        product_name = self.PRODUCT_NAMES["object_priority"] if kwargs.get('priority', False) else self.PRODUCT_NAMES["object"]
+        return self._post_request(product_name, requests)
 
-    def fetch_single_right_list(self, request: RealtyObject) -> Optional[Dict]:
+    def fetch_single_right_list(self, request: RealtyObject, **kwargs) -> Optional[Dict]:
         """Получить список прав с заданным ключом и необязательным адресом."""
-        return self._post_request(self.PRODUCT_NAMES["right_list"], [request])
+        product_name = self.PRODUCT_NAMES["right_list_priority"] if kwargs.get('priority', False) else self.PRODUCT_NAMES["right_list"]
+        return self._post_request(product_name, [request])
 
     def fetch_multiple_right_lists(
-        self, requests: List[RealtyObject]
+        self, requests: List[RealtyObject], **kwargs
     ) -> Optional[Dict]:
         """Получить несколько списков прав, позволяя использовать необязательные адреса."""
-        return self._post_request(self.PRODUCT_NAMES["right_list"], requests)
+        product_name = self.PRODUCT_NAMES["right_list_priority"] if kwargs.get('priority', False) else self.PRODUCT_NAMES["right_list"]
+        return self._post_request(product_name, requests)
 
-    def fetch_multiple_full_data(self, request: RealtyObject) -> Optional[Dict]:
+    def fetch_multiple_full_data(self, request: RealtyObject, **kwargs) -> Optional[Dict]:
         """Получить полные данные для одного объекта и его прав с заданным ключом и необязательным адресом."""
+        product_name_object = self.PRODUCT_NAMES["object_priority"] if kwargs.get('priority', False) else self.PRODUCT_NAMES["object"]
+        product_name_right_list = self.PRODUCT_NAMES["right_list_priority"] if kwargs.get('priority', False) else self.PRODUCT_NAMES["right_list"]
         order_items = [
-            request.to_dict(self.PRODUCT_NAMES["object"]),
-            request.to_dict(self.PRODUCT_NAMES["right_list"]),
+            request.to_dict(product_name_object),
+            request.to_dict(product_name_right_list),
         ]
         response = self._post("", {"order_items": order_items})
         return response.get("data")
@@ -204,16 +212,17 @@ class RiskClient(ClientBase):
         super().__init__(base_url=self.BASE_URL, token=token)
 
     def fetch_risk_assessment_for_individual(
-        self, object: RealtyObject, owners: List[RealtyOwner] = None
+        self, object: RealtyObject, owners: List[RealtyOwner] = None, **kwargs
     ) -> Optional[Dict]:
         """Получить оценку риска для физического лица."""
         if owners is None:
             owners = []
 
+        product_name = "RiskAssessmentFastV2" if kwargs.get('priority', False) else "RiskAssessmentV2"
         data = {
             "order_items": [
                 {
-                    "product_name": "RiskAssessmentV2",
+                    "product_name": product_name,
                     "object_key": object.key,
                     "object_address": object.address,
                     "metadata": {"ownersData": [owner.to_dict() for owner in owners]},
