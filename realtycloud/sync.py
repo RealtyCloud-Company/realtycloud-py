@@ -325,6 +325,6 @@ class Realtycloud:
         - file_pdf_url — ссылка на отчет в формате PDF.
         - file_signed_zip_url — ссылка на zip-архив с подписью.
         """
-        return self._status.fetch_status(
+        return self._status_client.fetch_status(
             order_item_ids=order_item_ids, offset=offset, limit=limit, **kwargs
         )
