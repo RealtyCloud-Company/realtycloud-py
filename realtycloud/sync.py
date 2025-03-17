@@ -134,6 +134,21 @@ class SuggestClient(ClientBase):
         ]
 
 
+class InfoClient(ClientBase):
+    """Клиент API Realtycloud получения информации по кадастровому номеру"""
+
+    BASE_URL = "https://api.realtycloud.ru/objectFull"
+
+    def __init__(self, token: str):
+        super().__init__(base_url=self.BASE_URL, token=token)
+
+    def info(self, query: str) -> List[Dict]:
+        """Получение информации по кадастровому номеру"""
+        query = str(query.strip())
+        response = self._get(f"{self.BASE_URL}/{query}", {})
+        return response.get("data", {})
+
+
 class EGRNClient(ClientBase):
     """Клиент API Realtycloud EGRN"""
 
@@ -258,12 +273,17 @@ class Realtycloud:
     def __init__(self, token: str):
         self._egrn_client = EGRNClient(token=token)
         self._suggest_client = SuggestClient(token=token)
+        self._info_client = InfoClient(token=token)
         self._risk_client = RiskClient(token=token)
         self._status_client = StatusClient(token=token)
 
     def suggest(self, query: str, **kwargs) -> List[Dict]:
         """Запрос на получение списка кадастровых номеров по адресу"""
         return self._suggest_client.suggest(query=query, **kwargs)
+
+    def info(self, query: str, **kwargs) -> List[Dict]:
+        """Запрос на получение информации по кадастровому номеру"""
+        return self._info_client.info(query=query, **kwargs)
 
     def order_single_object(self, request: RealtyObject, **kwargs) -> Optional[Dict]:
         """Запрос на отчет о характеристиках объекта недвижимости"""
