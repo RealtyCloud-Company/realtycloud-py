@@ -134,6 +134,42 @@ class SuggestClient(ClientBase):
         ]
 
 
+class SimpleSuggestClient(ClientBase):
+    """Клиент API Realtycloud для получения подсказок"""
+
+    BASE_URL = "https://api.realtycloud.ru/dadata/"
+
+    def __init__(self, token: str):
+        super().__init__(base_url=self.BASE_URL, token=token)
+
+    def suggest_parties(self, count: int, query: str) -> List[Dict]:
+        """Получение списка компаний по заданному запросу."""
+        params = {"count": count, "query": query}
+        response = self._get(self.BASE_URL + "suggest_parties", params)
+        return response.get("data", [])
+
+    def suggest_addresses(self, count: int, query: str) -> List[Dict]:
+        """Получение списка адресов по заданному запросу."""
+        params = {"count": count, "query": query}
+        response = self._get(self.BASE_URL + "suggest", params)
+        return response.get("data", [])
+
+
+class InfoClient(ClientBase):
+    """Клиент API Realtycloud получения информации по кадастровому номеру"""
+
+    BASE_URL = "https://api.realtycloud.ru/objectFull"
+
+    def __init__(self, token: str):
+        super().__init__(base_url=self.BASE_URL, token=token)
+
+    def info(self, query: str) -> List[Dict]:
+        """Получение информации по кадастровому номеру"""
+        query = str(query.strip())
+        response = self._get(f"{self.BASE_URL}/{query}", {})
+        return response.get("data", {})
+
+
 class InfoClient(ClientBase):
     """Клиент API Realtycloud получения информации по кадастровому номеру"""
 
@@ -186,30 +222,60 @@ class EGRNClient(ClientBase):
 
     def fetch_single_object(self, request: RealtyObject, **kwargs) -> Optional[Dict]:
         """Получить объект с заданным запросом."""
-        product_name = self.PRODUCT_NAMES["object_priority"] if kwargs.get('priority', False) else self.PRODUCT_NAMES["object"]
+        product_name = (
+            self.PRODUCT_NAMES["object_priority"]
+            if kwargs.get("priority", False)
+            else self.PRODUCT_NAMES["object"]
+        )
         return self._post_request(product_name, [request])
 
-    def fetch_multiple_objects(self, requests: List[RealtyObject], **kwargs) -> Optional[Dict]:
+    def fetch_multiple_objects(
+        self, requests: List[RealtyObject], **kwargs
+    ) -> Optional[Dict]:
         """Получить несколько объектов, позволяя использовать необязательные адреса."""
-        product_name = self.PRODUCT_NAMES["object_priority"] if kwargs.get('priority', False) else self.PRODUCT_NAMES["object"]
+        product_name = (
+            self.PRODUCT_NAMES["object_priority"]
+            if kwargs.get("priority", False)
+            else self.PRODUCT_NAMES["object"]
+        )
         return self._post_request(product_name, requests)
 
-    def fetch_single_right_list(self, request: RealtyObject, **kwargs) -> Optional[Dict]:
+    def fetch_single_right_list(
+        self, request: RealtyObject, **kwargs
+    ) -> Optional[Dict]:
         """Получить список прав с заданным ключом и необязательным адресом."""
-        product_name = self.PRODUCT_NAMES["right_list_priority"] if kwargs.get('priority', False) else self.PRODUCT_NAMES["right_list"]
+        product_name = (
+            self.PRODUCT_NAMES["right_list_priority"]
+            if kwargs.get("priority", False)
+            else self.PRODUCT_NAMES["right_list"]
+        )
         return self._post_request(product_name, [request])
 
     def fetch_multiple_right_lists(
         self, requests: List[RealtyObject], **kwargs
     ) -> Optional[Dict]:
         """Получить несколько списков прав, позволяя использовать необязательные адреса."""
-        product_name = self.PRODUCT_NAMES["right_list_priority"] if kwargs.get('priority', False) else self.PRODUCT_NAMES["right_list"]
+        product_name = (
+            self.PRODUCT_NAMES["right_list_priority"]
+            if kwargs.get("priority", False)
+            else self.PRODUCT_NAMES["right_list"]
+        )
         return self._post_request(product_name, requests)
 
-    def fetch_multiple_full_data(self, request: RealtyObject, **kwargs) -> Optional[Dict]:
+    def fetch_multiple_full_data(
+        self, request: RealtyObject, **kwargs
+    ) -> Optional[Dict]:
         """Получить полные данные для одного объекта и его прав с заданным ключом и необязательным адресом."""
-        product_name_object = self.PRODUCT_NAMES["object_priority"] if kwargs.get('priority', False) else self.PRODUCT_NAMES["object"]
-        product_name_right_list = self.PRODUCT_NAMES["right_list_priority"] if kwargs.get('priority', False) else self.PRODUCT_NAMES["right_list"]
+        product_name_object = (
+            self.PRODUCT_NAMES["object_priority"]
+            if kwargs.get("priority", False)
+            else self.PRODUCT_NAMES["object"]
+        )
+        product_name_right_list = (
+            self.PRODUCT_NAMES["right_list_priority"]
+            if kwargs.get("priority", False)
+            else self.PRODUCT_NAMES["right_list"]
+        )
         order_items = [
             request.to_dict(product_name_object),
             request.to_dict(product_name_right_list),
@@ -233,7 +299,11 @@ class RiskClient(ClientBase):
         if owners is None:
             owners = []
 
-        product_name = "RiskAssessmentFastV2" if kwargs.get('priority', False) else "RiskAssessmentV2"
+        product_name = (
+            "RiskAssessmentFastV2"
+            if kwargs.get("priority", False)
+            else "RiskAssessmentV2"
+        )
         data = {
             "order_items": [
                 {
@@ -273,6 +343,7 @@ class Realtycloud:
     def __init__(self, token: str):
         self._egrn_client = EGRNClient(token=token)
         self._suggest_client = SuggestClient(token=token)
+        self._simple_suggest_client = SimpleSuggestClient(token=token)
         self._info_client = InfoClient(token=token)
         self._risk_client = RiskClient(token=token)
         self._status_client = StatusClient(token=token)
@@ -280,6 +351,18 @@ class Realtycloud:
     def suggest(self, query: str, **kwargs) -> List[Dict]:
         """Запрос на получение списка кадастровых номеров по адресу"""
         return self._suggest_client.suggest(query=query, **kwargs)
+
+    def suggest_addresses(self, count: int, query: str, **kwargs) -> List[Dict]:
+        """Запрос на получение подсказок адресов"""
+        return self._simple_suggest_client.suggest_addresses(
+            count=count, query=query, **kwargs
+        )
+
+    def suggest_parties(self, count: int, query: str, **kwargs) -> List[Dict]:
+        """Запрос на получение подсказок по организациям"""
+        return self._simple_suggest_client.suggest_parties(
+            count=count, query=query, **kwargs
+        )
 
     def info(self, query: str, **kwargs) -> List[Dict]:
         """Запрос на получение информации по кадастровому номеру"""
